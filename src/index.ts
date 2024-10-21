@@ -1,5 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import mysql from 'mysql2/promise';
+import { MessageController, createMessageRoutes } from './messageController';
+import { UserController, createUserRoutes } from './userController';
 
 const app: Express = express();
 const port: number = 3000;
@@ -34,44 +36,23 @@ async function checkDatabaseConnection() {
   }
 }
 
-// 定义 Note 接口
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-}
+
+// 创建控制器实例
+const messageController = new MessageController(pool);
+const userController = new UserController(pool);
+
+// 获取路由处理函数
+const messageRoutes = createMessageRoutes(messageController);
+const userRoutes = createUserRoutes(userController);
+
+// 设置路由
+app.post('/api/messages', messageRoutes.sendMessage);
+app.get('/api/messages', messageRoutes.getMessages);
+app.get('/api/user', userRoutes.getUser);
 
 app.get('/', (req: Request, res: Response) => {
   console.log('收到根路径请求');
   res.send('欢迎来到我的 TypeScript 后端服务!');
-});
-
-app.get('/api/user', async (req: Request, res: Response) => {
-  console.log('收到 /api/user 请求');
-  const username = req.query.username as string;
-
-  if (!username) {
-    return res.status(400).json({ error: '缺少用户名参数' });
-  }
-
-  console.log(`查询的用户名: "${username}"`);
-
-  try {
-    console.log(`尝试从数据库获取用户 ${username} 的数据`);
-    const [rows] = await pool.query('SELECT * FROM `user` WHERE username = ?', [username]);
-    console.log('SQL查询:', 'SELECT * FROM `user` WHERE username = ?', [username]);
-    console.log('查询结果:', rows);
-
-    if (Array.isArray(rows) && rows.length > 0) {
-      res.json(rows[0]);
-    } else {
-      console.log('未找到用户，返回404');
-      res.status(404).json({ error: '未找到该用户' });
-    }
-  } catch (error: any) {
-    console.error('获取用户数据时发生错误:', error);
-    res.status(500).json({ error: '获取用户数据时发生错误', details: error.message });
-  }
 });
 
 // 添加一个测试路由
@@ -80,7 +61,7 @@ app.get('/api/test', (req: Request, res: Response) => {
   res.json({ message: 'Test route is working' });
 });
 
-// 将错误处理中间件移到这里，并添加日志
+// 错误处理中间件
 app.use((req: Request, res: Response) => {
   console.log(`收到未匹配的请求: ${req.method} ${req.url}`);
   res.status(404).json({ error: 'Not Found' });
