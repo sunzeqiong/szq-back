@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { Pool } from 'mysql2/promise';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess, sendError } from '../../utils/response';
 
 export const getComplaints = (pool: Pool) => async (req: Request, res: Response) => {
   const { status, priority } = req.query;
   try {
     let query = `
-      SELECT c.*, u.username as handler_name
+      SELECT c.*, u.nick_name as handler_name
       FROM customer_complaint c
       LEFT JOIN user u ON c.handler_id = u.id
       WHERE 1=1

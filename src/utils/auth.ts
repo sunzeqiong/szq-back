@@ -10,7 +10,7 @@ export const comparePassword = (password: string, hash: string): Promise<boolean
 
 interface TokenPayload {
   userId: number;
-  username: string;
+  nick_name: string;
 }
 
 interface TokenPair {

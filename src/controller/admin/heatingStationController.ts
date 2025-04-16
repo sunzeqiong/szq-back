@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import { Pool } from 'mysql2/promise';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess, sendError } from '../../utils/response';
 
 export const getStations = (pool: Pool) => async (req: Request, res: Response) => {
   try {
     const [stations] = await pool.query(
-      `SELECT h.*, u.username as manager_name 
+      `SELECT h.*, u.nick_name as manager_name 
        FROM heating_station h 
        LEFT JOIN user u ON h.manager_id = u.id`
     );
@@ -19,7 +19,7 @@ export const getStationById = (pool: Pool) => async (req: Request, res: Response
   const { id } = req.params;
   try {
     const [stations] = await pool.query(
-      `SELECT h.*, u.username as manager_name 
+      `SELECT h.*, u.nick_name as manager_name 
        FROM heating_station h 
        LEFT JOIN user u ON h.manager_id = u.id 
        WHERE h.id = ?`,
@@ -35,13 +35,13 @@ export const getStationById = (pool: Pool) => async (req: Request, res: Response
 };
 
 export const createStation = (pool: Pool) => async (req: Request, res: Response) => {
-  const { name, address, area_covered, capacity, manager_id } = req.body;
+  const { name, address, area_covered, capacity, manager_id, temperature, pressure } = req.body;
   try {
     const [result] = await pool.query(
       `INSERT INTO heating_station 
-       (name, address, area_covered, capacity, status, manager_id) 
-       VALUES (?, ?, ?, ?, 'stopped', ?)`,
-      [name, address, area_covered, capacity, manager_id]
+       (name, address, area_covered, capacity, status, manager_id, temperature, pressure) 
+       VALUES (?, ?, ?, ?, 'stopped', ?, ?, ?)`,
+      [name, address, area_covered, capacity, manager_id, temperature, pressure]
     );
     return sendSuccess(res, { id: (result as any).insertId }, '创建热力站成功');
   } catch (error) {
@@ -60,5 +60,19 @@ export const updateStationStatus = (pool: Pool) => async (req: Request, res: Res
     return sendSuccess(res, null, '更新状态成功');
   } catch (error) {
     return sendError(res, '更新状态失败');
+  }
+};
+
+export const updateStationValues = (pool: Pool) => async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { temperature, pressure } = req.body;
+  try {
+    await pool.query(
+      'UPDATE heating_station SET temperature = ?, pressure = ? WHERE id = ?',
+      [temperature, pressure, id]
+    );
+    return sendSuccess(res, null, '更新温度压力成功');
+  } catch (error) {
+    return sendError(res, '更新温度压力失败');
   }
 };

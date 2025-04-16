@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Pool } from 'mysql2/promise';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess, sendError } from '../../utils/response';
 
 export const getEnergyConsumption = (pool: Pool) => async (req: Request, res: Response) => {
   const { station_id, start_date, end_date } = req.query;

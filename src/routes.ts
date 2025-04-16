@@ -1,24 +1,36 @@
 import { Router } from 'express';
 import { createUserRoutes } from './controller/userController';
 import { refreshToken } from './controller/tokenController';
-import * as heatingStationController from './controller/heatingStationController';
-import * as heatingRecordController from './controller/heatingRecordController';
-import * as maintenanceController from './controller/maintenanceController';
+import * as heatingStationController from './controller/admin/heatingStationController';
+import * as heatingRecordController from './controller/admin/heatingRecordController';
+import * as maintenanceController from './controller/admin/maintenanceController';
 import { authenticateToken } from './middleware/auth';
 import pool from './db';
-import * as alarmController from './controller/alarmController';
-import * as energyController from './controller/energyController';
-import * as complaintController from './controller/complaintController';
-import * as equipmentController from './controller/equipmentController';
-import * as dashboardController from './controller/dashboardController';
+import * as alarmController from './controller/admin/alarmController';
+import * as energyController from './controller/admin/energyController';
+import * as complaintController from './controller/admin/complaintController';
+import * as equipmentController from './controller/admin/equipmentController';
+import * as dashboardController from './controller/admin/dashboardController';
+import { messageRoutes } from './controller/chat/messageController';
+import { RoomController, createRoomRoutes } from './controller/chat/roomController';
+import { createFriendRoutes } from './controller/chat/friendController';
 
 const router = Router();
+const roomController = new RoomController(pool);
+const roomRoutes = createRoomRoutes(roomController);
+const messageController = messageRoutes(pool);
+const friendRoutes = createFriendRoutes(pool);
 
 // 用户认证相关路由
 const userRoutes = createUserRoutes(pool);
 router.post('/auth/register', userRoutes.register);
 router.post('/auth/login', userRoutes.login);
 router.post('/auth/refresh-token', refreshToken(pool));
+
+// 用户相关路由
+router.get('/users', authenticateToken, userRoutes.getAllUsers);
+router.get('/users/search', authenticateToken, userRoutes.searchUsers); // 添加搜索用户路由
+router.post('/auth/logout', authenticateToken, userRoutes.logout);      // 添加登出路由
 
 // 热力站管理路由
 router.get('/stations', authenticateToken, heatingStationController.getStations(pool));
@@ -59,5 +71,24 @@ router.post('/equipment/maintenance', authenticateToken, equipmentController.add
 router.get('/dashboard/overview', authenticateToken, dashboardController.getDashboardOverview(pool));
 router.get('/dashboard/realtime', authenticateToken, dashboardController.getRealTimeMonitoring(pool));
 router.get('/dashboard/performance', authenticateToken, dashboardController.getPerformanceAnalysis(pool));
+
+// 消息相关路由
+router.post('/messages', authenticateToken, messageController.sendMessage);
+router.get('/messages', authenticateToken, messageController.getMessages);
+router.delete('/messages/:messageId', authenticateToken, messageController.deleteMessage);
+
+// 聊天室相关路由
+router.post('/rooms', authenticateToken, roomRoutes.createRoom);
+router.post('/rooms/:roomId/join', authenticateToken, roomRoutes.joinRoom);
+router.post('/rooms/:roomId/leave', authenticateToken, roomRoutes.leaveRoom);
+router.get('/rooms', authenticateToken, roomRoutes.getRooms);
+router.post('/rooms/private/:userId', authenticateToken, roomRoutes.getOrCreatePrivateRoom);
+
+// 好友相关路由
+router.get('/friends', authenticateToken, friendRoutes.getFriends);
+router.post('/friends/add', authenticateToken, friendRoutes.addFriend);
+router.post('/friends/handle-request', authenticateToken, friendRoutes.handleFriendRequest);
+router.delete('/friends/:friendId', authenticateToken, friendRoutes.deleteFriend);
+router.get('/friends/requests', authenticateToken, friendRoutes.getFriendRequests);
 
 export default router;

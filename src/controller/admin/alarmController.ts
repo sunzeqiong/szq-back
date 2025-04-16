@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { Pool } from 'mysql2/promise';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess, sendError } from '../../utils/response';
 
 export const getAlarms = (pool: Pool) => async (req: Request, res: Response) => {
   const { station_id, status, severity } = req.query;
   try {
     let query = `
-      SELECT a.*, s.name as station_name, u.username as resolved_by_name
+      SELECT a.*, s.name as station_name, u.nick_name as resolved_by_name
       FROM alarm_record a
       LEFT JOIN heating_station s ON a.station_id = s.id
       LEFT JOIN user u ON a.resolved_by = u.id

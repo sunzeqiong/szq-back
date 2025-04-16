@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Pool, RowDataPacket } from 'mysql2/promise';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess, sendError } from '../../utils/response';
 
 // 获取运营总览数据（统计数据和趋势分析）
 export const getDashboardOverview = (pool: Pool) => async (req: Request, res: Response) => {
